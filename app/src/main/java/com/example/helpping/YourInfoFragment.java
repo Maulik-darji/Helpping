@@ -27,15 +27,38 @@ public class YourInfoFragment extends Fragment {
         TextView emailText = view.findViewById(R.id.emailText);
         ImageView profileImage = view.findViewById(R.id.profileImage);
 
-        nameText.setText(UserSession.name != null ? UserSession.name : "No name");
-        emailText.setText(UserSession.email != null ? UserSession.email : "No email");
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        
+        if (user != null) {
+            String name = user.getDisplayName();
+            String email = user.getEmail();
+            android.net.Uri photoUrl = user.getPhotoUrl();
 
-        if (UserSession.photo != null) {
-            Glide.with(this)
-                    .load(UserSession.photo)
-                    .circleCrop()
-                    .into(profileImage);
+            nameText.setText(name != null ? name : "No name found");
+            emailText.setText(email != null ? email : "No email found");
+
+            if (photoUrl != null) {
+                Glide.with(this)
+                        .load(photoUrl)
+                        .circleCrop()
+                        .into(profileImage);
+            }
+        } else {
+            nameText.setText("Not signed in");
+            emailText.setText("Not signed in");
         }
+
+        android.widget.Button btnLogout = view.findViewById(R.id.btnLogout);
+        btnLogout.setOnClickListener(v -> {
+            com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+            com.google.android.gms.auth.api.signin.GoogleSignInOptions gso = new com.google.android.gms.auth.api.signin.GoogleSignInOptions.Builder(com.google.android.gms.auth.api.signin.GoogleSignInOptions.DEFAULT_SIGN_IN).build();
+            com.google.android.gms.auth.api.signin.GoogleSignIn.getClient(requireActivity(), gso).signOut().addOnCompleteListener(task -> {
+                android.content.Intent intent = new android.content.Intent(requireActivity(), MainActivity.class);
+                intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                requireActivity().finish();
+            });
+        });
 
         return view;
     }

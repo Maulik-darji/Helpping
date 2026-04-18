@@ -56,6 +56,15 @@
             android:textSize="14sp"
             android:layout_marginTop="6dp" />
 
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="LOG OUT"
+            android:textColor="@android:color/holo_red_dark"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
     </LinearLayout>
 
 </FrameLayout>
