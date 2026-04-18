@@ -304,8 +304,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 tvAlertBannerText.setText(helperName + " is coming to help you!");
                 btnBroadcastEmergency.setText("HELP IS ON THE WAY");
                 btnBroadcastEmergency.setEnabled(false);
-                btnCancelBroadcast.setVisibility(View.GONE); 
-                // Can't easily cancel if help is coming, or just let them
+                btnCancelBroadcast.setVisibility(View.VISIBLE); 
+                btnCancelBroadcast.setText("CANCEL HELP (I AM SAFE)");
 
                 if (helperLat != null && helperLng != null) {
                     LatLng hLoc = new LatLng(helperLat, helperLng);
@@ -338,6 +338,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         btnBroadcastEmergency.setEnabled(true);
         btnBroadcastEmergency.setText("ASK FOR HELP - BROADCAST");
         btnCancelBroadcast.setVisibility(View.GONE);
+        btnCancelBroadcast.setText("CANCEL BROADCAST");
         if (helperMarker != null) {
             helperMarker.remove();
             helperMarker = null;

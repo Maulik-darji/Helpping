@@ -205,18 +205,14 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
             }
 
             String victimId = doc.getString("victimId");
-            // NOTE: Temporarily disabling self-id filter to trace the bug.
-            // if (currentUserId != null && currentUserId.equals(victimId)) {
-            //     Toast.makeText(getContext(), "DEBUG: Ignored own request", Toast.LENGTH_SHORT).show();
-            //     continue;
-            // }
+            // Re-enabling self-id filter so you don't help yourself in production.
+            if (currentUserId != null && currentUserId.equals(victimId)) {
+                continue;
+            }
 
             Long timestamp = doc.getLong("timestamp");
-            // NOTE: Temporarily disabling the 10-minute timeout filter in case phone clocks are not synced.
-            // if (timestamp == null || timestamp < tenMinsAgo) {
-            //     Toast.makeText(getContext(), "DEBUG: Ignored old request", Toast.LENGTH_SHORT).show();
-            //     continue;
-            // }
+            // We removed the 10-minute timeout check. We now rely strictly on the 
+            // 'PENDING' status and the fact that we delete the document when ending/canceling.
 
             if (selectedRequest != null && doc.getId().equals(selectedRequest.getId())) {
                 selectedRequestStillExists = true;
