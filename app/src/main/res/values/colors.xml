@@ -1,0 +1,14 @@
+<resources>
+    <!-- Light theme primary colors -->
+    <color name="primary_light">#1A73E8</color>   <!-- Blue -->
+    <color name="on_primary_light">#000000</color>
+
+    <color name="main_title">#ffffff</color>
+    <color name="on_main_title">#000000</color>
+
+    <!-- Dark theme primary colors -->
+    <color name="primary_dark">#0B57D0</color>    <!-- Darker blue -->
+    <color name="on_primary_dark">#FFFFFF</color>
+
+    <color name="safety_red">#E53935</color>
+</resources>

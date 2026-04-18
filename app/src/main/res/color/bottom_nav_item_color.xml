@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Selected (blue) -->
+    <item
+        android:state_checked="true"
+        android:color="@color/primary_light" />
+<!--    STATE CHECKED IS USED TO CHECK IF THE ITEM IS SELECTED THEN AND THEN ONLY APPLY THE COLOR-->
+
+    <!-- Unselected (gray) -->
+    <item
+        android:state_checked="false"
+        android:color="@color/primary_light" />
+
+</selector>

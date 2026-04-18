@@ -1,0 +1,10 @@
+<resources>
+    <style name="ToolbarTitleBold" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="ShapeOverlayHelpPingCircular">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+</resources>

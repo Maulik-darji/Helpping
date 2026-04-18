@@ -1,0 +1,23 @@
+*.iml
+/.gradle
+/.gradle-user-home
+/local.properties
+/.idea/
+/.vscode/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Google Services
+google-services.json
+app/google-services.json
+
+# API Keys and Secrets
+secrets.properties
+local.properties
+
+# Build artifacts
+app/build/
+build/
