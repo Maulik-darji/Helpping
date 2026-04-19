@@ -52,7 +52,9 @@ public class InAppCallActivity extends AppCompatActivity {
     private static final String TURN_PASSWORD = "testpass";
 
     private TextView tvChannel, tvStatus, tvMode;
-    private Button btnTalk, btnEndCall, btnRelaySettings;
+    private Button btnTalk, btnEndCall, btnRelaySettings, btnSpeakerToggle;
+    private Chronometer chronometer;
+    private AudioManager audioManager;
 
     private String requestId;
     private FirebaseFirestore db;
@@ -92,6 +94,13 @@ public class InAppCallActivity extends AppCompatActivity {
 
         btnRelaySettings.setOnClickListener(v -> 
                 startActivity(new Intent(this, PttRelaySettingsActivity.class)));
+
+        btnSpeakerToggle = findViewById(R.id.btnSpeakerToggle);
+        btnSpeakerToggle.setOnClickListener(v -> toggleSpeaker());
+
+        chronometer = findViewById(R.id.chronometer);
+
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         btnEndCall.setOnClickListener(v -> endCall());
         btnTalk.setOnClickListener(v -> togglePushToTalk());
@@ -155,10 +164,14 @@ public class InAppCallActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     if (iceConnectionState == PeerConnection.IceConnectionState.CONNECTED) {
                         tvStatus.setText("Listening (Relay Active)");
+                        chronometer.setBase(android.os.SystemClock.elapsedRealtime());
+                        chronometer.start();
                     } else if (iceConnectionState == PeerConnection.IceConnectionState.DISCONNECTED) {
                         tvStatus.setText("Searching Signal...");
+                        chronometer.stop();
                     } else if (iceConnectionState == PeerConnection.IceConnectionState.FAILED) {
                         tvStatus.setText("Relay Connection Failed");
+                        chronometer.stop();
                         Log.e(TAG, "ICE CONNECTION FAILED. Check GCP Firewall ports 49152-65535!");
                     }
                 });
@@ -200,15 +213,31 @@ public class InAppCallActivity extends AppCompatActivity {
 
     // (HMAC helper removed as you are using static user/pass)
 
+    private void toggleSpeaker() {
+        if (audioManager == null) return;
+        boolean isSpeakerOn = audioManager.isSpeakerphoneOn();
+        audioManager.setSpeakerphoneOn(!isSpeakerOn);
+        
+        if (!isSpeakerOn) {
+            btnSpeakerToggle.setText("SPEAKER: ON");
+            btnSpeakerToggle.setTextColor(android.graphics.Color.parseColor("#4CAF50"));
+        } else {
+            btnSpeakerToggle.setText("SPEAKER: OFF");
+            btnSpeakerToggle.setTextColor(android.graphics.Color.LTGRAY);
+        }
+    }
+
     private void setupAudio() {
         AudioSource audioSource = peerConnectionFactory.createAudioSource(new MediaConstraints());
         localAudioTrack = peerConnectionFactory.createAudioTrack("101", audioSource);
         localAudioTrack.setEnabled(false);
         peerConnection.addTrack(localAudioTrack);
 
-        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (audioManager == null) {
+            audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        }
         audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-        audioManager.setSpeakerphoneOn(true);
+        audioManager.setSpeakerphoneOn(true); // Default to speaker for walkie-talkie mode
     }
 
     private void startSignaling() {
@@ -310,6 +339,7 @@ public class InAppCallActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (chronometer != null) chronometer.stop();
         if (signalingListener != null) signalingListener.remove();
         if (candidateListener != null) candidateListener.remove();
         if (callStatusListener != null) callStatusListener.remove();

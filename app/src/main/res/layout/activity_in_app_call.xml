@@ -15,18 +15,6 @@
         android:textSize="22sp"
         android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/btnSpeakerToggle"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentRight="true"
-        android:backgroundTint="#333333"
-        android:text="SPEAKER: ON"
-        android:textColor="#4CAF50"
-        android:textStyle="bold"
-        android:textSize="12sp" />
-
     <TextView
         android:id="@+id/tvChannel"
         android:layout_width="wrap_content"
@@ -75,12 +63,34 @@
         android:layout_width="match_parent"
         android:layout_height="160dp"
         android:layout_centerInParent="true"
-        android:backgroundTint="@android:color/holo_green_dark"
+        android:backgroundTint="#04C797"
         android:text="TAP TO TALK"
         android:textAllCaps="true"
         android:textColor="#FFFFFF"
         android:textStyle="bold"
         android:textSize="22sp" />
+
+    <Chronometer
+        android:id="@+id/chronometer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/btnSpeakerToggle"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="6dp"
+        android:textColor="#AAAAAA"
+        android:textSize="14sp" />
+
+    <Button
+        android:id="@+id/btnSpeakerToggle"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_above="@+id/btnEndCall"
+        android:layout_marginBottom="10dp"
+        android:backgroundTint="#333333"
+        android:text="SPEAKER: ON"
+        android:textColor="#4CAF50"
+        android:textStyle="bold"
+        android:textSize="18sp" />
 
     <Button
         android:id="@+id/btnEndCall"
@@ -88,7 +98,7 @@
         android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:backgroundTint="#D32F2F"
-        android:text="END WALKIE-TALKIE"
+        android:text="END CALL"
         android:textColor="#FFFFFF"
         android:textStyle="bold"
         android:textSize="18sp" />
