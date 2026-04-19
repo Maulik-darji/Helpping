@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import com.google.android.material.card.MaterialCardView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -62,8 +63,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private Button btnSaveLocation;
     private FloatingActionButton btnCenterLocation;
     private Button btnBroadcastEmergency;
-    private Button btnCancelBroadcast;
-    private View alertBanner;
+    private com.google.android.material.button.MaterialButton btnCancelBroadcast;
+    private MaterialCardView alertBanner;
     private TextView tvAlertBannerText;
     private boolean isEditMode = false;
     private LatLng currentVictimLocation;
@@ -71,6 +72,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private Marker helperMarker;
     private boolean isCallRingDialogShowing = false;
     private boolean isCallActive = false;
+    private android.os.Handler bannerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private String lastHelperName = null;
 
     private final ActivityResultLauncher<String> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -296,8 +299,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             if (e != null || snapshot == null) return;
 
             if (!snapshot.exists()) {
-                // If it was cancelled by the victim (us) or deleted
-                resetBroadcastUI();
+                // If the document was deleted, it means the emergency is over or the helper cancelled
+                if (lastHelperName != null) {
+                    alertBanner.setVisibility(View.VISIBLE);
+                    alertBanner.setCardBackgroundColor(android.graphics.Color.parseColor("#D32F2F"));
+                    tvAlertBannerText.setText(lastHelperName + " cancelled the request.");
+                    bannerHandler.postDelayed(this::resetBroadcastUI, 5000);
+                    lastHelperName = null;
+                } else {
+                    resetBroadcastUI();
+                }
                 return;
             }
 
@@ -309,8 +320,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             String callStatus = snapshot.getString("callStatus");
 
             if ("ACCEPTED".equals(status) && helperName != null) {
+                lastHelperName = helperName;
                 alertBanner.setVisibility(View.VISIBLE);
+                alertBanner.setCardBackgroundColor(android.graphics.Color.parseColor("#4CAF50"));
                 tvAlertBannerText.setText(helperName + " is coming to help you!");
+                
+                // Auto-hide after 5 seconds
+                bannerHandler.removeCallbacksAndMessages(null);
+                bannerHandler.postDelayed(() -> alertBanner.setVisibility(View.GONE), 5000);
+
                 btnBroadcastEmergency.setText("HELP IS ON THE WAY");
                 btnBroadcastEmergency.setEnabled(false);
                 btnCancelBroadcast.setVisibility(View.VISIBLE); 

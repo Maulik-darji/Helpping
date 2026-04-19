@@ -33,6 +33,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentReference;
@@ -98,6 +99,7 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
         tvTimestamp = view.findViewById(R.id.tvTimestamp);
 
         btnAccept = view.findViewById(R.id.btnAccept);
+        FloatingActionButton btnCenterLocation = view.findViewById(R.id.btnCenterLocation);
         btnReject = view.findViewById(R.id.btnReject);
         btnStartNavigation = view.findViewById(R.id.btnStartNavigation);
         btnEndEmergency = view.findViewById(R.id.btnEndEmergency);
@@ -112,6 +114,15 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
         btnAccept.setOnClickListener(v -> acceptRequest());
         btnStartNavigation.setOnClickListener(v -> startNavigation());
         btnEndEmergency.setOnClickListener(v -> endEmergency());
+
+        btnCenterLocation.setOnClickListener(v -> {
+            if (currentHelperLocation != null && mMap != null) {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                        new LatLng(currentHelperLocation.getLatitude(), currentHelperLocation.getLongitude()), 17f));
+            } else {
+                Toast.makeText(requireContext(), "Location not available yet", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.helperMap);
         if (mapFragment != null) {
@@ -382,6 +393,10 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                     
                     if(vLat != null && vLng != null) {
                         activeVictimLocation = new LatLng(vLat, vLng);
+                        
+                        // Drift map to victim instead of just adding marker
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(activeVictimLocation, 17f));
+                        
                         mMap.addMarker(new MarkerOptions()
                                 .position(activeVictimLocation)
                                 .title("Victim")

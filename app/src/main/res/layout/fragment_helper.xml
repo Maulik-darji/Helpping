@@ -16,6 +16,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="16dp"
+        android:layout_marginTop="54dp"
         android:background="@drawable/bg_rounded_white"
         android:elevation="4dp"
         android:padding="12dp"
@@ -84,15 +85,19 @@
                 android:layout_marginTop="16dp"
                 android:orientation="horizontal">
 
-                <Button
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnReject"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
+                    android:backgroundTint="#F5F5F5"
                     android:text="Reject"
-                    android:textColor="#555555" />
+                    android:textColor="#D32F2F"
+                    app:cornerRadius="12dp"
+                    app:strokeColor="#DDDDDD"
+                    app:strokeWidth="1dp" />
 
                 <Button
                     android:id="@+id/btnAccept"
@@ -109,6 +114,19 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Navigation Tracking Setup (Hidden initially) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/btnCenterLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:contentDescription="Center Location"
+        app:backgroundTint="#1A73E8"
+        app:fabSize="normal"
+        app:layout_constraintBottom_toTopOf="@id/cardEmergencyDetails"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@android:drawable/ic_menu_mylocation"
+        app:tint="@android:color/white" />
+
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardNavigation"
         android:layout_width="match_parent"

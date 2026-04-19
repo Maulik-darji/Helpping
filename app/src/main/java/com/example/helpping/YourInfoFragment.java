@@ -38,10 +38,26 @@ public class YourInfoFragment extends Fragment {
             emailText.setText(email != null ? email : "No email found");
 
             if (photoUrl != null) {
+                // Main profile image
                 Glide.with(this)
                         .load(photoUrl)
                         .circleCrop()
                         .into(profileImage);
+
+                // Top Bar menu icon
+                com.google.android.material.appbar.MaterialToolbar topBar = view.findViewById(R.id.yourInfoTopBar);
+                if (topBar != null) {
+                    View actionView = topBar.getMenu().findItem(R.id.action_profile).getActionView();
+                    if (actionView != null) {
+                        ImageView profileIcon = actionView.findViewById(R.id.profileIconImage);
+                        if (profileIcon != null) {
+                            Glide.with(this)
+                                    .load(photoUrl)
+                                    .circleCrop()
+                                    .into(profileIcon);
+                        }
+                    }
+                }
             }
         } else {
             nameText.setText("Not signed in");
