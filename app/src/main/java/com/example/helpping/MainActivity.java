@@ -142,6 +142,8 @@ public class MainActivity extends AppCompatActivity {
         }
         setSupportActionBar(toolbar);
 
+        loadProfileImage();
+
         // Google Sign-In config
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -315,6 +317,30 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadProfileImage();
+    }
+
+    private void loadProfileImage() {
+        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+        if (toolbar == null) return;
+        
+        MenuItem profileItem = toolbar.getMenu().findItem(R.id.action_profile);
+        View actionView = profileItem != null ? profileItem.getActionView() : null;
+        ImageView profileIconImage = actionView != null ? actionView.findViewById(R.id.profileIconImage) : null;
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (profileIconImage != null && user != null && user.getPhotoUrl() != null) {
+            UserSession.photo = user.getPhotoUrl().toString();
+            Glide.with(this)
+                    .load(UserSession.photo)
+                    .circleCrop()
+                    .into(profileIconImage);
+        }
+    }
+
     // ✅ UPDATED: Save user info after Firebase login
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
@@ -329,6 +355,7 @@ public class MainActivity extends AppCompatActivity {
                             UserSession.email = user.getEmail();
                             Uri photoUrl = user.getPhotoUrl();
                             UserSession.photo = photoUrl != null ? photoUrl.toString() : null;
+                            loadProfileImage(); // Refresh immediately after login
                         }
 
                         Toast.makeText(this, "Signed in successfully", Toast.LENGTH_SHORT).show();

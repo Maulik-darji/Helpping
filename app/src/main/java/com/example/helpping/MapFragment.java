@@ -15,6 +15,10 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -74,6 +78,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private boolean isCallActive = false;
     private android.os.Handler bannerHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private String lastHelperName = null;
+    private Ringtone currentRingtone;
+    private androidx.appcompat.app.AlertDialog incomingCallDialog;
 
     private final ActivityResultLauncher<String> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -346,25 +352,58 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     });
                 }
 
-                if ("RINGING".equals(callStatus) && !isCallRingDialogShowing) {
-                    isCallRingDialogShowing = true;
-                    new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                        .setTitle("Incoming Voice Call")
-                        .setMessage(helperName + " is calling you!")
-                        .setPositiveButton("Accept", (dialog, which) -> {
-                            isCallRingDialogShowing = false;
-                            currentRequestRef.update("callStatus", "CONNECTED");
-                            android.content.Intent intent = new android.content.Intent(requireActivity(), InAppCallActivity.class);
-                            intent.putExtra("requestId", currentRequestRef.getId());
-                            startActivity(intent);
-                        })
-                        .setNegativeButton("Decline", (dialog, which) -> {
-                            isCallRingDialogShowing = false;
-                            currentRequestRef.update("callStatus", "REJECTED");
-                        })
-                        .setCancelable(false)
-                        .show();
-                } else if ("VICTIM_CONNECTED".equals(callStatus) && !isCallActive) {
+                if ("RINGING".equals(callStatus)) {
+                    if (!isCallRingDialogShowing) {
+                        isCallRingDialogShowing = true;
+                        
+                        // Start Ringtone
+                        try {
+                            Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
+                            currentRingtone = RingtoneManager.getRingtone(requireContext(), notification);
+                            if (currentRingtone != null) currentRingtone.play();
+                        } catch (Exception ex) {
+                            Log.e("MapFragment", "Error playing ringtone", ex);
+                        }
+
+                        incomingCallDialog = new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Incoming Voice Call")
+                            .setMessage(helperName + " is calling you!")
+                            .setPositiveButton("Accept", (dialog, which) -> {
+                                stopRinging();
+                                currentRequestRef.update("callStatus", "CONNECTED");
+                                android.content.Intent intent = new android.content.Intent(requireActivity(), InAppCallActivity.class);
+                                intent.putExtra("requestId", currentRequestRef.getId());
+                                startActivity(intent);
+                            })
+                            .setNegativeButton("Decline", (dialog, which) -> {
+                                stopRinging();
+                                currentRequestRef.update("callStatus", "REJECTED");
+                            })
+                            .setCancelable(false)
+                            .create();
+
+                        // Set button colors to white after showing
+                        incomingCallDialog.setOnShowListener(dialogInterface -> {
+                            Button pBtn = incomingCallDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE);
+                            Button nBtn = incomingCallDialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_NEGATIVE);
+                            if (pBtn != null) {
+                                pBtn.setBackgroundColor(android.graphics.Color.WHITE);
+                                pBtn.setTextColor(android.graphics.Color.BLACK);
+                            }
+                            if (nBtn != null) {
+                                nBtn.setBackgroundColor(android.graphics.Color.WHITE);
+                                nBtn.setTextColor(android.graphics.Color.BLACK);
+                            }
+                        });
+                        
+                        incomingCallDialog.show();
+                    }
+                } else {
+                    // If status changed from RINGING to something else (e.g. caller cancelled)
+                    stopRinging();
+                }
+
+                if ("VICTIM_CONNECTED".equals(callStatus) && !isCallActive) {
                     isCallActive = true;
                     if (btnCallHelper != null) btnCallHelper.setText("IN-APP CALL (WIFI)");
                     android.content.Intent intent = new android.content.Intent(requireActivity(), InAppCallActivity.class);
@@ -430,5 +469,14 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         Canvas canvas = new Canvas(bitmap);
         vectorDrawable.draw(canvas);
         return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+    private void stopRinging() {
+        isCallRingDialogShowing = false;
+        if (currentRingtone != null && currentRingtone.isPlaying()) {
+            currentRingtone.stop();
+        }
+        if (incomingCallDialog != null && incomingCallDialog.isShowing()) {
+            incomingCallDialog.dismiss();
+        }
     }
 }

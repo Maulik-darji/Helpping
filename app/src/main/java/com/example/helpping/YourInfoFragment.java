@@ -37,27 +37,16 @@ public class YourInfoFragment extends Fragment {
             nameText.setText(name != null ? name : "No name found");
             emailText.setText(email != null ? email : "No email found");
 
-            if (photoUrl != null) {
+            // Priority 1: Use the centrally cached session photo
+            // Priority 2: Fallback to the live Firebase user photo
+            String finalPhotoUrl = (UserSession.photo != null) ? UserSession.photo : (photoUrl != null ? photoUrl.toString() : null);
+
+            if (finalPhotoUrl != null) {
                 // Main profile image
                 Glide.with(this)
-                        .load(photoUrl)
+                        .load(finalPhotoUrl)
                         .circleCrop()
                         .into(profileImage);
-
-                // Top Bar menu icon
-                com.google.android.material.appbar.MaterialToolbar topBar = view.findViewById(R.id.yourInfoTopBar);
-                if (topBar != null) {
-                    View actionView = topBar.getMenu().findItem(R.id.action_profile).getActionView();
-                    if (actionView != null) {
-                        ImageView profileIcon = actionView.findViewById(R.id.profileIconImage);
-                        if (profileIcon != null) {
-                            Glide.with(this)
-                                    .load(photoUrl)
-                                    .circleCrop()
-                                    .into(profileIcon);
-                        }
-                    }
-                }
             }
         } else {
             nameText.setText("Not signed in");

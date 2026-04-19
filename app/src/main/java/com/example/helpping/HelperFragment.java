@@ -459,17 +459,24 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                     
                     tvLookingForHelp.setVisibility(View.GONE);
                     cardNavigation.setVisibility(View.VISIBLE);
-
+ 
                     Button btnCallVictim = getView().findViewById(R.id.btnCallVictim);
-                     if (btnCallVictim != null) {
-                         btnCallVictim.setVisibility(View.VISIBLE);
-                         btnCallVictim.setEnabled(true);
-                         btnCallVictim.setText("IN-APP CALL");
-                         btnCallVictim.setOnClickListener(vCall -> {
-                             btnCallVictim.setText("RINGING...");
-                             db.collection("emergency_requests").document(activeRequestId).update("callStatus", "RINGING");
-                         });
-                     }
+                    if (btnCallVictim != null) {
+                        btnCallVictim.setVisibility(View.VISIBLE);
+                        btnCallVictim.setEnabled(true);
+                        btnCallVictim.setText("IN-APP CALL");
+                        btnCallVictim.setOnClickListener(vCall -> {
+                            if ("IN-APP CALL".equals(btnCallVictim.getText().toString())) {
+                                btnCallVictim.setText("CANCEL CALL");
+                                btnCallVictim.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#D32F2F")));
+                                db.collection("emergency_requests").document(activeRequestId).update("callStatus", "RINGING");
+                            } else {
+                                btnCallVictim.setText("IN-APP CALL");
+                                btnCallVictim.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#4CAF50")));
+                                db.collection("emergency_requests").document(activeRequestId).update("callStatus", null);
+                            }
+                        });
+                    }
                 })
                 .addOnFailureListener(e -> {
                     android.util.Log.w(TAG, "Accept request failed", e);
