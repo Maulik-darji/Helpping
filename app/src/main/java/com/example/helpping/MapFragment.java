@@ -321,7 +321,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                     btnCallHelper.setVisibility(View.VISIBLE);
                     btnCallHelper.setVisibility(View.VISIBLE);
                     btnCallHelper.setEnabled(true);
-                    btnCallHelper.setText("IN-APP CALL (WIFI)");
+                    btnCallHelper.setText("IN-APP CALL");
                     btnCallHelper.setOnClickListener(vCall -> {
                         btnCallHelper.setText("RINGING...");
                         currentRequestRef.update("callStatus", "VICTIM_RINGING");
@@ -331,8 +331,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 if ("RINGING".equals(callStatus) && !isCallRingDialogShowing) {
                     isCallRingDialogShowing = true;
                     new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                        .setTitle("Incoming Wi-Fi Call")
-                        .setMessage(helperName + " is calling you via Wi-Fi!")
+                        .setTitle("Incoming Voice Call")
+                        .setMessage(helperName + " is calling you!")
                         .setPositiveButton("Accept", (dialog, which) -> {
                             isCallRingDialogShowing = false;
                             currentRequestRef.update("callStatus", "CONNECTED");

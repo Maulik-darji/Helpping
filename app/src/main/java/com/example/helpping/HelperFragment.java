@@ -402,17 +402,17 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                                     startActivity(intent);
                                     
                                     Button btnCallVictimLocal = getView().findViewById(R.id.btnCallVictim);
-                                    if (btnCallVictimLocal != null) btnCallVictimLocal.setText("IN-APP CALL (WIFI)");
+                                    if (btnCallVictimLocal != null) btnCallVictimLocal.setText("IN-APP CALL");
                                 } else if ("REJECTED".equals(callStatus)) {
                                     Toast.makeText(requireContext(), "Victim declined the call.", Toast.LENGTH_SHORT).show();
                                     db.collection("emergency_requests").document(activeRequestId).update("callStatus", null);
                                     Button btnCallVictimLocal = getView().findViewById(R.id.btnCallVictim);
-                                    if (btnCallVictimLocal != null) btnCallVictimLocal.setText("IN-APP CALL (WIFI)");
+                                    if (btnCallVictimLocal != null) btnCallVictimLocal.setText("IN-APP CALL");
                                 } else if ("VICTIM_RINGING".equals(callStatus) && !isCallRingDialogShowing) {
                                     isCallRingDialogShowing = true;
                                     new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                                        .setTitle("Incoming Wi-Fi Call")
-                                        .setMessage("The Victim is calling you via Wi-Fi!")
+                                        .setTitle("Incoming Voice Call")
+                                        .setMessage("The Victim is calling you!")
                                         .setPositiveButton("Accept", (dialog, which) -> {
                                             isCallRingDialogShowing = false;
                                             db.collection("emergency_requests").document(activeRequestId).update("callStatus", "VICTIM_CONNECTED");
@@ -449,7 +449,7 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                      if (btnCallVictim != null) {
                          btnCallVictim.setVisibility(View.VISIBLE);
                          btnCallVictim.setEnabled(true);
-                         btnCallVictim.setText("IN-APP CALL (WIFI)");
+                         btnCallVictim.setText("IN-APP CALL");
                          btnCallVictim.setOnClickListener(vCall -> {
                              btnCallVictim.setText("RINGING...");
                              db.collection("emergency_requests").document(activeRequestId).update("callStatus", "RINGING");
