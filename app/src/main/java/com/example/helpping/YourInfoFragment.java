@@ -53,13 +53,18 @@ public class YourInfoFragment extends Fragment {
             emailText.setText("Not signed in");
         }
 
-        android.widget.EditText etPhone = view.findViewById(R.id.etPhone);
-        android.widget.Button btnSavePhone = view.findViewById(R.id.btnSavePhone);
-        TextView tvRadiusValue = view.findViewById(R.id.tvRadiusValue);
-        com.google.android.material.slider.Slider distanceSlider = view.findViewById(R.id.distanceSlider);
-        
+        com.google.android.material.materialswitch.MaterialSwitch themeSwitch = view.findViewById(R.id.themeSwitch);
         android.content.SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
         
+        boolean isDarkMode = prefs.getBoolean("dark_mode", false);
+        themeSwitch.setChecked(isDarkMode);
+        themeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("dark_mode", isChecked).apply();
+            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                    isChecked ? androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES : androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+            );
+        });
+
         etPhone.setText(prefs.getString("my_phone", ""));
         float savedRadius = prefs.getFloat("search_radius", 50.0f);
         distanceSlider.setValue(savedRadius);

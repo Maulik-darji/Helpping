@@ -53,26 +53,23 @@
 
             <Button
                 android:id="@+id/btnEmergencySharing"
-
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:backgroundTint="@color/cardview_dark_background"
+                android:layout_marginTop="8dp"
                 android:paddingTop="20dp"
                 android:paddingBottom="20dp"
                 android:text="Emergency Sharing"
-                android:textColor="@color/on_primary_dark"
                 android:textAlignment="textStart"
-                android:textSize="16sp"/>
+                android:textSize="16sp" />
 
             <Button
                 android:id="@+id/btnCall112"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:backgroundTint="@color/cardview_dark_background"
+                android:layout_marginTop="8dp"
                 android:paddingTop="20dp"
                 android:paddingBottom="20dp"
                 android:text="Call 112"
-                android:textColor="@color/on_primary_dark"
                 android:textAlignment="textStart"
                 android:textSize="16sp" />
 
@@ -89,10 +86,10 @@
                 android:id="@+id/btnEmergency"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:paddingTop="20dp"
                 android:paddingBottom="20dp"
                 android:text="Emergency Button"
-                android:textColor="@color/on_primary_dark"
                 android:textAlignment="center"
                 android:textSize="16sp" />
         </LinearLayout>

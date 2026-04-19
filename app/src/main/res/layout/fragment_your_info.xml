@@ -40,6 +40,15 @@
             android:textSize="14sp"
             android:layout_marginTop="6dp" />
 
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/themeSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Dark Mode"
+            android:checked="false"
+            app:thumbIcon="@drawable/ic_person" />
+
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

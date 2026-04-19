@@ -77,10 +77,16 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Apply saved theme preference
+        android.content.SharedPreferences prefs = getSharedPreferences("app_prefs", MODE_PRIVATE);
+        boolean isDarkMode = prefs.getBoolean("dark_mode", false);
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                isDarkMode ? androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES : androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+        );
+
         super.onCreate(savedInstanceState);
 
-        boolean isFirstLaunch = getSharedPreferences("app_prefs", MODE_PRIVATE)
-                .getBoolean("first_launch", true);
+        boolean isFirstLaunch = prefs.getBoolean("first_launch", true);
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
