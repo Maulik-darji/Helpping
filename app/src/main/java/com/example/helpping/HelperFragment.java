@@ -239,7 +239,7 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                     if (currentHelperLocation != null) {
                         float distKm = currentHelperLocation.distanceTo(vLoc) / 1000f;
                         android.content.SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
-                        float maxRadiusKm = prefs.getFloat("search_radius", 50.0f);
+                        float maxRadiusKm = prefs.getFloat("search_radius", 5000.0f);
                         if (distKm > maxRadiusKm) {
                             continue; // Hide requests outside of our preferred radius
                         }
