@@ -15,6 +15,18 @@
         android:textSize="22sp"
         android:textStyle="bold" />
 
+    <Button
+        android:id="@+id/btnSpeakerToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:backgroundTint="#333333"
+        android:text="SPEAKER: ON"
+        android:textColor="#4CAF50"
+        android:textStyle="bold"
+        android:textSize="12sp" />
+
     <TextView
         android:id="@+id/tvChannel"
         android:layout_width="wrap_content"
