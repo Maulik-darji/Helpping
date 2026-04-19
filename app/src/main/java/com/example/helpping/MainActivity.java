@@ -142,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
         }
         setSupportActionBar(toolbar);
 
-        loadProfileImage();
+        toolbar.post(this::loadProfileImage);
 
         // Google Sign-In config
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
