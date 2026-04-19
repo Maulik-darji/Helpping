@@ -24,4 +24,8 @@
     <string name="emergency_share_contact_name">Emergency contact name</string>
     <string name="emergency_share_contact_phone">Emergency contact phone</string>
     <string name="save">Save</string>
+
+    <!-- Walkie-talkie internet relay (set these to enable long-distance PTT) -->
+    <string name="ptt_relay_host"></string>
+    <string name="ptt_relay_port">0</string>
 </resources>

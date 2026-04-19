@@ -69,6 +69,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private LatLng currentVictimLocation;
     private DocumentReference currentRequestRef;
     private Marker helperMarker;
+    private boolean isCallRingDialogShowing = false;
+    private boolean isCallActive = false;
 
     private final ActivityResultLauncher<String> locationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
@@ -253,8 +255,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         
+        android.content.SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+        String victimPhone = prefs.getString("my_phone", "");
+
         Map<String, Object> request = new HashMap<>();
         request.put("victimId", user.getUid());
+        request.put("victimPhone", victimPhone);
         request.put("victimName", user.getDisplayName() != null ? user.getDisplayName() : "Someone");
         request.put("victimLat", currentVictimLocation.latitude);
         request.put("victimLng", currentVictimLocation.longitude);
@@ -262,6 +268,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         request.put("status", "PENDING");
         request.put("helperId", null);
         request.put("helperName", null);
+        request.put("helperPhone", null);
         request.put("helperLat", null);
         request.put("helperLng", null);
         request.put("timestamp", System.currentTimeMillis());
@@ -296,8 +303,10 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
             String status = snapshot.getString("status");
             String helperName = snapshot.getString("helperName");
+            String helperPhone = snapshot.getString("helperPhone");
             Double helperLat = snapshot.getDouble("helperLat");
             Double helperLng = snapshot.getDouble("helperLng");
+            String callStatus = snapshot.getString("callStatus");
 
             if ("ACCEPTED".equals(status) && helperName != null) {
                 alertBanner.setVisibility(View.VISIBLE);
@@ -306,6 +315,48 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                 btnBroadcastEmergency.setEnabled(false);
                 btnCancelBroadcast.setVisibility(View.VISIBLE); 
                 btnCancelBroadcast.setText("CANCEL HELP (I AM SAFE)");
+                
+                Button btnCallHelper = getView().findViewById(R.id.btnCallHelper);
+                if (btnCallHelper != null) {
+                    btnCallHelper.setVisibility(View.VISIBLE);
+                    btnCallHelper.setVisibility(View.VISIBLE);
+                    btnCallHelper.setEnabled(true);
+                    btnCallHelper.setText("IN-APP CALL (WIFI)");
+                    btnCallHelper.setOnClickListener(vCall -> {
+                        btnCallHelper.setText("RINGING...");
+                        currentRequestRef.update("callStatus", "VICTIM_RINGING");
+                    });
+                }
+
+                if ("RINGING".equals(callStatus) && !isCallRingDialogShowing) {
+                    isCallRingDialogShowing = true;
+                    new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                        .setTitle("Incoming Wi-Fi Call")
+                        .setMessage(helperName + " is calling you via Wi-Fi!")
+                        .setPositiveButton("Accept", (dialog, which) -> {
+                            isCallRingDialogShowing = false;
+                            currentRequestRef.update("callStatus", "CONNECTED");
+                            android.content.Intent intent = new android.content.Intent(requireActivity(), InAppCallActivity.class);
+                            intent.putExtra("requestId", currentRequestRef.getId());
+                            startActivity(intent);
+                        })
+                        .setNegativeButton("Decline", (dialog, which) -> {
+                            isCallRingDialogShowing = false;
+                            currentRequestRef.update("callStatus", "REJECTED");
+                        })
+                        .setCancelable(false)
+                        .show();
+                } else if ("VICTIM_CONNECTED".equals(callStatus) && !isCallActive) {
+                    isCallActive = true;
+                    if (btnCallHelper != null) btnCallHelper.setText("IN-APP CALL (WIFI)");
+                    android.content.Intent intent = new android.content.Intent(requireActivity(), InAppCallActivity.class);
+                    intent.putExtra("requestId", currentRequestRef.getId());
+                    startActivity(intent);
+                } else if ("VICTIM_REJECTED".equals(callStatus)) {
+                    Toast.makeText(requireContext(), "Helper declined the call.", Toast.LENGTH_SHORT).show();
+                    currentRequestRef.update("callStatus", null);
+                    if (btnCallHelper != null) btnCallHelper.setText("IN-APP CALL (WIFI)");
+                }
 
                 if (helperLat != null && helperLng != null) {
                     LatLng hLoc = new LatLng(helperLat, helperLng);
@@ -339,10 +390,16 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         btnBroadcastEmergency.setText("ASK FOR HELP - BROADCAST");
         btnCancelBroadcast.setVisibility(View.GONE);
         btnCancelBroadcast.setText("CANCEL BROADCAST");
+        Button btnCallHelper = getView().findViewById(R.id.btnCallHelper);
+        if (btnCallHelper != null) {
+            btnCallHelper.setVisibility(View.GONE);
+        }
         if (helperMarker != null) {
             helperMarker.remove();
             helperMarker = null;
         }
+        isCallRingDialogShowing = false;
+        isCallActive = false;
         currentRequestRef = null;
     }
 

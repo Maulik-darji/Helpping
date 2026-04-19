@@ -35,8 +35,10 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.HashMap;
@@ -52,6 +54,8 @@ import androidx.core.content.ContextCompat;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 
 public class HelperFragment extends Fragment implements OnMapReadyCallback {
+
+    private static final String TAG = "HelperFragment";
 
     private GoogleMap mMap;
     private FusedLocationProviderClient fusedLocationClient;
@@ -70,6 +74,10 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
     private com.google.firebase.firestore.QuerySnapshot lastSnapshots;
     private Location lastRefreshLocation;
     private java.util.Set<String> rejectedRequestIds = new java.util.HashSet<>();
+    private ListenerRegistration activeCallListener;
+    private boolean isCallRingDialogShowing = false;
+    private boolean isCallActive = false;
+    private boolean acceptInProgress = false;
 
     private LocationCallback navigationLocationCallback;
 
@@ -99,6 +107,7 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                 rejectedRequestIds.add(selectedRequest.getId());
             }
             hideRequestCard();
+            refreshMarkersAndUI();
         });
         btnAccept.setOnClickListener(v -> acceptRequest());
         btnStartNavigation.setOnClickListener(v -> startNavigation());
@@ -225,8 +234,17 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                     Location vLoc = new Location("");
                     vLoc.setLatitude(lat);
                     vLoc.setLongitude(lng);
+                    
+                    // apply distance filter
+                    if (currentHelperLocation != null) {
+                        float distKm = currentHelperLocation.distanceTo(vLoc) / 1000f;
+                        android.content.SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+                        float maxRadiusKm = prefs.getFloat("search_radius", 50.0f);
+                        if (distKm > maxRadiusKm) {
+                            continue; // Hide requests outside of our preferred radius
+                        }
+                    }
 
-                    // We are accepting ALL distances for now to ensure testing works perfectly.
                     foundNearby = true;
                     Marker m = mMap.addMarker(new MarkerOptions()
                             .position(new LatLng(lat, lng))
@@ -305,6 +323,7 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
 
     private void acceptRequest() {
         if (selectedRequest == null) return;
+        if (acceptInProgress) return;
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
@@ -312,24 +331,55 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
             return;
         }
 
-        activeRequestId = selectedRequest.getId();
-        
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "ACCEPTED");
-        updates.put("helperId", user.getUid());
-        updates.put("helperName", user.getDisplayName() != null ? user.getDisplayName() : "A Helper");
-        if(currentHelperLocation != null) {
-            updates.put("helperLat", currentHelperLocation.getLatitude());
-            updates.put("helperLng", currentHelperLocation.getLongitude());
+        if (currentHelperLocation == null) {
+            Toast.makeText(requireContext(), "Getting your location… try again in a moment.", Toast.LENGTH_SHORT).show();
+            return;
         }
 
-        db.collection("emergency_requests").document(activeRequestId)
-                .update(updates)
+        activeRequestId = selectedRequest.getId();
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("status", "ACCEPTED");
+        android.content.SharedPreferences prefs = requireActivity().getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE);
+        String helperPhone = prefs.getString("my_phone", "");
+
+        updates.put("helperId", user.getUid());
+        updates.put("helperPhone", helperPhone);
+        updates.put("helperName", user.getDisplayName() != null ? user.getDisplayName() : "A Helper");
+        updates.put("helperLat", currentHelperLocation.getLatitude());
+        updates.put("helperLng", currentHelperLocation.getLongitude());
+
+        acceptInProgress = true;
+        btnAccept.setEnabled(false);
+        btnAccept.setText("ACCEPTING...");
+
+        DocumentReference requestRef = db.collection("emergency_requests").document(activeRequestId);
+
+        db.runTransaction(transaction -> {
+                    DocumentSnapshot current = transaction.get(requestRef);
+                    if (!current.exists()) {
+                        throw new FirebaseFirestoreException("Request no longer exists.", FirebaseFirestoreException.Code.NOT_FOUND);
+                    }
+
+                    String status = current.getString("status");
+                    String existingHelperId = current.getString("helperId");
+                    if (!"PENDING".equals(status) || (existingHelperId != null && !existingHelperId.isEmpty())) {
+                        throw new FirebaseFirestoreException("Already accepted by someone else.", FirebaseFirestoreException.Code.ABORTED);
+                    }
+
+                    transaction.update(requestRef, updates);
+                    return null;
+                })
                 .addOnSuccessListener(aVoid -> {
+                    acceptInProgress = false;
+                    btnAccept.setEnabled(true);
+                    btnAccept.setText("ACCEPT");
                     Toast.makeText(requireContext(), "Request Accepted!", Toast.LENGTH_SHORT).show();
                     
                     Double vLat = selectedRequest.getDouble("victimLat");
                     Double vLng = selectedRequest.getDouble("victimLng");
+                    String vPhone = selectedRequest.getString("victimPhone");
+                    
                     if(vLat != null && vLng != null) {
                         activeVictimLocation = new LatLng(vLat, vLng);
                         mMap.addMarker(new MarkerOptions()
@@ -340,6 +390,49 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                     
                     hideRequestCard();
                     if (requestsListener != null) requestsListener.remove();
+                    
+                    activeCallListener = db.collection("emergency_requests").document(activeRequestId)
+                        .addSnapshotListener((snap, error) -> {
+                            if (snap != null && snap.exists()) {
+                                String callStatus = snap.getString("callStatus");
+                                if ("CONNECTED".equals(callStatus) && !isCallActive) {
+                                    isCallActive = true;
+                                    android.content.Intent intent = new android.content.Intent(requireActivity(), InAppCallActivity.class);
+                                    intent.putExtra("requestId", activeRequestId);
+                                    startActivity(intent);
+                                    
+                                    Button btnCallVictimLocal = getView().findViewById(R.id.btnCallVictim);
+                                    if (btnCallVictimLocal != null) btnCallVictimLocal.setText("IN-APP CALL (WIFI)");
+                                } else if ("REJECTED".equals(callStatus)) {
+                                    Toast.makeText(requireContext(), "Victim declined the call.", Toast.LENGTH_SHORT).show();
+                                    db.collection("emergency_requests").document(activeRequestId).update("callStatus", null);
+                                    Button btnCallVictimLocal = getView().findViewById(R.id.btnCallVictim);
+                                    if (btnCallVictimLocal != null) btnCallVictimLocal.setText("IN-APP CALL (WIFI)");
+                                } else if ("VICTIM_RINGING".equals(callStatus) && !isCallRingDialogShowing) {
+                                    isCallRingDialogShowing = true;
+                                    new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                                        .setTitle("Incoming Wi-Fi Call")
+                                        .setMessage("The Victim is calling you via Wi-Fi!")
+                                        .setPositiveButton("Accept", (dialog, which) -> {
+                                            isCallRingDialogShowing = false;
+                                            db.collection("emergency_requests").document(activeRequestId).update("callStatus", "VICTIM_CONNECTED");
+                                            android.content.Intent intent = new android.content.Intent(requireActivity(), InAppCallActivity.class);
+                                            intent.putExtra("requestId", activeRequestId);
+                                            startActivity(intent);
+                                        })
+                                        .setNegativeButton("Decline", (dialog, which) -> {
+                                            isCallRingDialogShowing = false;
+                                            db.collection("emergency_requests").document(activeRequestId).update("callStatus", "VICTIM_REJECTED");
+                                        })
+                                        .setCancelable(false)
+                                        .show();
+                                }
+                            } else if (snap != null && !snap.exists()) {
+                                Toast.makeText(requireContext(), "The victim has cancelled the emergency request.", Toast.LENGTH_LONG).show();
+                                endEmergency();
+                            }
+                        });
+                        
                     mMap.clear();
                     
                     if (activeVictimLocation != null) {
@@ -351,10 +444,40 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
                     
                     tvLookingForHelp.setVisibility(View.GONE);
                     cardNavigation.setVisibility(View.VISIBLE);
+
+                    Button btnCallVictim = getView().findViewById(R.id.btnCallVictim);
+                     if (btnCallVictim != null) {
+                         btnCallVictim.setVisibility(View.VISIBLE);
+                         btnCallVictim.setEnabled(true);
+                         btnCallVictim.setText("IN-APP CALL (WIFI)");
+                         btnCallVictim.setOnClickListener(vCall -> {
+                             btnCallVictim.setText("RINGING...");
+                             db.collection("emergency_requests").document(activeRequestId).update("callStatus", "RINGING");
+                         });
+                     }
                 })
                 .addOnFailureListener(e -> {
+                    android.util.Log.w(TAG, "Accept request failed", e);
                     activeRequestId = null;
-                    Toast.makeText(requireContext(), "Failed to accept", Toast.LENGTH_SHORT).show();
+                    acceptInProgress = false;
+                    btnAccept.setEnabled(true);
+                    btnAccept.setText("ACCEPT");
+
+                    String message = "Failed to accept.";
+                    if (e instanceof FirebaseFirestoreException) {
+                        FirebaseFirestoreException ffe = (FirebaseFirestoreException) e;
+                        if (ffe.getCode() == FirebaseFirestoreException.Code.ABORTED) {
+                            message = ffe.getMessage() != null ? ffe.getMessage() : "Already accepted by someone else.";
+                        } else if (ffe.getCode() == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                            message = "Failed to accept (permission denied). Check Firestore rules.";
+                        } else if (ffe.getMessage() != null && !ffe.getMessage().isEmpty()) {
+                            message = "Failed to accept: " + ffe.getMessage();
+                        }
+                    } else if (e != null && e.getMessage() != null && !e.getMessage().isEmpty()) {
+                        message = "Failed to accept: " + e.getMessage();
+                    }
+
+                    Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
                 });
     }
 
@@ -410,11 +533,19 @@ public class HelperFragment extends Fragment implements OnMapReadyCallback {
         if (navigationLocationCallback != null) {
             fusedLocationClient.removeLocationUpdates(navigationLocationCallback);
         }
+        if (activeCallListener != null) {
+            activeCallListener.remove();
+            activeCallListener = null;
+        }
+        isCallRingDialogShowing = false;
+        isCallActive = false;
         
         activeRequestId = null;
         activeVictimLocation = null;
         cardNavigation.setVisibility(View.GONE);
         btnEndEmergency.setVisibility(View.GONE);
+        Button btnCallVictim = getView().findViewById(R.id.btnCallVictim);
+        if (btnCallVictim != null) btnCallVictim.setVisibility(View.GONE);
         btnStartNavigation.setVisibility(View.VISIBLE);
         tvLookingForHelp.setVisibility(View.VISIBLE);
         

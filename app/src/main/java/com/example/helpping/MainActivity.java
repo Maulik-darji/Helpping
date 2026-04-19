@@ -82,7 +82,9 @@ public class MainActivity extends AppCompatActivity {
         boolean isFirstLaunch = getSharedPreferences("app_prefs", MODE_PRIVATE)
                 .getBoolean("first_launch", true);
 
-        if (isFirstLaunch) {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (isFirstLaunch || currentUser == null) {
             startActivity(new Intent(this, WelcomeActivity.class));
             finish();
             return;
