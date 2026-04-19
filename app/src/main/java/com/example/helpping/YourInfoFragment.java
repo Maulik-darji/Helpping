@@ -64,6 +64,11 @@ public class YourInfoFragment extends Fragment {
                     isChecked ? androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES : androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
             );
         });
+ 
+        android.widget.EditText etPhone = view.findViewById(R.id.etPhone);
+        android.widget.Button btnSavePhone = view.findViewById(R.id.btnSavePhone);
+        TextView tvRadiusValue = view.findViewById(R.id.tvRadiusValue);
+        com.google.android.material.slider.Slider distanceSlider = view.findViewById(R.id.distanceSlider);
 
         etPhone.setText(prefs.getString("my_phone", ""));
         float savedRadius = prefs.getFloat("search_radius", 50.0f);
